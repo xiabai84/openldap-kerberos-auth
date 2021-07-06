@@ -13,6 +13,11 @@ This project provides a dockerized openldap and kerberos environment, which is i
 
 You can modify the ldap-structure via web-ui by using phpldapadmin tool.
 
+An LDAP entry could be for example:
+
+    CN=cluster-admin,OU=Kafka,OU=PermGrp,OU=MgtGrp,OU=Infrastrcuture,DC=example,DC=org 
+
+
 ## KDC-Server
 If a new user is added in LDAP you must also register it in Kerberos as well, because they are not synchronized with each other.
 By registering new user in Kerberos you can perform following command:
@@ -23,7 +28,7 @@ Docker Login:
 
 Create new Kerberos principal:
 
-    $ kadmin.local -q 'addprinc -x dn=cn=Test" "Xia,cn=users,dc=ldap,dc=mylab,dc=blabla'
+    $ kadmin.local -q 'addprinc -x dn=cn=cluster-admin" "Xia,cn=users,dc=ldap,dc=example,dc=org'
 
 ## Connection Test
 **Kerberos should be able to query Openldap via LDAPS:**
