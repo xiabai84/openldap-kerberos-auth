@@ -17,6 +17,10 @@ An LDAP entry could be for example:
 
     CN=cluster-admin,OU=Kafka,OU=PermGrp,OU=MgtGrp,OU=Infrastrcuture,DC=example,DC=org 
 
+By default via docker-compose, kerberos container's IP will not be in certificate cn. That means, the container CA isn't knowned by your host.
+
+You can use a quick and dirty solution to overcome this issue by setting **LDAP_TLS_VERIFY_CLIENT: "never"** in docker-compose.yml. 
+
 
 ## KDC-Server
 If a new user is added in LDAP you must also register it in Kerberos as well, because they are not synchronized with each other.
