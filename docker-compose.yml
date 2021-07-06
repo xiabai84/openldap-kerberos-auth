@@ -49,11 +49,11 @@ services:
     image: local/kerberos:1.0.0
     container_name: kerberos
     environment:
-      REALM: "EXAMPLE"
-      DOMAIN_REALM: "example"
+      REALM: "EXAMPLE.ORG"
+      DOMAIN_REALM: "example.org"
       KERB_MASTER_KEY: "masterkey"
       KERB_ADMIN_USER: "admin:"
-      KERB_ADMINc_PASS: "admin"
+      KERB_ADMIN_PASS: "admin"
       SEARCH_DOMAINS: "ldap.example.org"
       LDAP_DC: "dc=example,dc=org"
       LDAP_USER: "admin"

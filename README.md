@@ -15,7 +15,7 @@ You can modify the ldap-structure via web-ui by using phpldapadmin tool.
 
 An LDAP entry could be for example:
 
-    CN=cluster-admin,OU=Kafka,OU=PermGrp,OU=MgtGrp,OU=Infrastrcuture,DC=example,DC=org 
+    CN=SYS-ADMIN,OU=Kafka,OU=PermGrp,OU=MgtGrp,OU=Infrastrcuture,DC=example,DC=org
 
 By default via docker-compose, kerberos container's IP will not be in certificate cn. That means, the container CA isn't knowned by your host.
 
@@ -30,14 +30,117 @@ Docker Login:
 
     $ docker exec -ti kerberos bash
 
-Create new Kerberos principal:
+Test ldaps connection(password admin):
 
-    $ kadmin.local -q 'addprinc -x dn=cn=cluster-admin" "Xia,cn=users,dc=ldap,dc=example,dc=org'
+    export REALM="EXAMPLE.ORG"
+    export LDAP_URL="ldaps://ldap.example.org"
+    kdb5_ldap_util -r $REALM -H $LDAP_URL -D "cn=admin,dc=example,dc=org" -W view
 
-## Connection Test
-**Kerberos should be able to query Openldap via LDAPS:**
+## phpldapadmin
 
-    $ docker exec -ti kerberos bash
+You can also use phpldapadmin for having a better [view](http://localhost:8080). 
+
+Login:
+
+    cn=admin,dc=example,dc=org
+Password:
     
+    admin
+
+## Creating user and principal
+
+Create test user:
+
+    # grab the script from test/add_user.ldif. 
+    # For editing you can install vim by yourself, since container will start as root user
+    $ ldapadd -x -H ldaps://ldap.example.org:636 -D "cn=admin,dc=example,dc=org" -W -f add_user.ldif
+    
+    Enter LDAP Password: admin
+    adding new entry "OU=Service,DC=example,DC=org"
+    adding new entry "OU=Kafka,OU=Service,DC=example,DC=org"
+    adding new entry "OU=User,OU=Kafka,OU=Service,DC=example,DC=org"
+    adding new entry "CN=user123,OU=User,OU=Kafka,OU=Service,DC=example,DC=org"    
+
+Add new Kerberos principal and link it to user123:
+
+    $ kadmin.local -q 'add_principal -x linkdn=cn=user123,OU=User,OU=Kafka,OU=Service,DC=example,DC=org user123'
+    
+    Authenticating as principal root/admin@EXAMPLE.ORG with password.
+    WARNING: no policy specified for user123@EXAMPLE.ORG; defaulting to no policy
+    Enter password for principal "user123@EXAMPLE.ORG":
+    Re-enter password for principal "user123@EXAMPLE.ORG":
+    Principal "user123@EXAMPLE.ORG" created.
+
+**Now Kerberos should be able to query Openldap**
+
     $ ldapsearch -x -H ldaps://ldap.example.org:636 -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w admin
 
+Output:
+
+    dn: krbPrincipalName=kadmin/history@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbContainer,dc=example,dc=org
+    krbLoginFailedCount: 0
+    krbMaxTicketLife: 36000
+    krbMaxRenewableAge: 604800
+    krbTicketFlags: 0
+    krbPrincipalName: kadmin/history@EXAMPLE.ORG
+    krbPrincipalExpiration: 19700101000000Z
+    krbPrincipalKey:: MGagAwIBAaEDAgEBogMCAQGjAwIBAKRQME4wTKAHMAWgAwIBAKFBMD+gAwIB
+    EKE4BDYYAH16cf9AqSnc0VtJ+28lR1tuXKO8aNQeHze/orLCWx1XgKoB7NXgClb1flEJS7HeFAf2v
+    RE=
+    krbLastPwdChange: 19700101000000Z
+    krbExtraData:: AALlfuRgZGJfY3JlYXRpb25ARVhBTVBMRS5PUkcA
+    krbExtraData:: AAcBAAIAAlUAAAAAAAA=
+    objectClass: krbPrincipal
+    objectClass: krbPrincipalAux
+    objectClass: krbTicketPolicyAux
+    
+    # Service, example.org
+    dn: ou=Service,dc=example,dc=org
+    objectClass: organizationalUnit
+    ou: Service
+    
+    # Kafka, Service, example.org
+    dn: ou=Kafka,ou=Service,dc=example,dc=org
+    objectClass: organizationalUnit
+    ou: Kafka
+    
+    # User, Kafka, Service, example.org
+    dn: ou=User,ou=Kafka,ou=Service,dc=example,dc=org
+    objectClass: organizationalUnit
+    ou: User
+    
+    # user123, User, Kafka, Service, example.org
+    dn: cn=user123,ou=User,ou=Kafka,ou=Service,dc=example,dc=org
+    cn: user123
+    objectClass: person
+    objectClass: uidObject
+    objectClass: inetOrgPerson
+    mail: user123@EXAMPLE.ORG
+    uid: user123
+    title: Mr.
+    givenName: Bai
+    sn: Xia
+    
+    # user123@EXAMPLE.ORG, EXAMPLE.ORG, krbContainer, example.org
+    dn: krbPrincipalName=user123@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbContainer,dc=exa
+    mple,dc=org
+    krbLoginFailedCount: 0
+    krbPrincipalName: user123@EXAMPLE.ORG
+    krbPrincipalKey:: MIG2oAMCAQGhAwIBAaIDAgEBowMCAQGkgZ8wgZwwVKAHMAWgAwIBAKFJMEeg
+    AwIBEqFABD4gAGDizHqUNkB9cw9A372y1dsJbcXtO7Z0V80KPFp8rM9XisIj+xRqbP7E+W78hy9wg
+    i3+Q7lFKYQ6Q5ZR0zBEoAcwBaADAgEAoTkwN6ADAgERoTAELhAAZM+kEB/0S5M53vVQZ8uhVkTYMK
+    VcpCihNl3I0j7RlzLUfX9nAJzc48pG7AM=
+    krbLastPwdChange: 20210706160519Z
+    krbExtraData:: AAI/f+Rgcm9vdC9hZG1pbkBFWEFNUExFLk9SRwA=
+    krbExtraData:: AAgBAA==
+    krbObjectReferences: cn=user123,ou=User,ou=Kafka,ou=Service,dc=example,dc=org
+    objectClass: krbPrincipal
+    objectClass: krbPrincipalAux
+    objectClass: krbTicketPolicyAux
+    
+    # search result
+    search: 2
+    result: 0 Success
+    
+    # numResponses: 16
+    # numEntries: 15
