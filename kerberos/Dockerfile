@@ -1,7 +1,7 @@
 FROM ubuntu
 
 # kerberos
-RUN apt-get update -y && apt-get install -y krb5-kdc-ldap krb5-admin-server ldap-utils
+RUN apt-get update -y && apt-get install -y krb5-kdc-ldap krb5-admin-server ldap-utils vim
 
 EXPOSE 88 464 749
 

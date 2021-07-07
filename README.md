@@ -53,17 +53,26 @@ Create test user:
 
     # grab the script from test/add_user.ldif. 
     # For editing you can install vim by yourself, since container will start as root user
-    $ ldapadd -x -H ldaps://ldap.example.org:636 -D "cn=admin,dc=example,dc=org" -W -f add_user.ldif
+    $ ldapadd -x -H ldaps://ldap.example.org:636 -D "cn=admin,dc=example,dc=org" -W -f init_ldap.ldif
     
     Enter LDAP Password: admin
-    adding new entry "OU=Service,DC=example,DC=org"
-    adding new entry "OU=Kafka,OU=Service,DC=example,DC=org"
-    adding new entry "OU=User,OU=Kafka,OU=Service,DC=example,DC=org"
-    adding new entry "CN=user123,OU=User,OU=Kafka,OU=Service,DC=example,DC=org"    
+    adding new entry "OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=Test,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "CN=Reader,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "CN=Writer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "CN=Viewer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "uid=kafka-stream-001,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    modifying entry "CN=Writer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    modifying entry "CN=Reader,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    modifying entry "CN=Viewer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"   
 
 Add new Kerberos principal and link it to user123:
 
-    $ kadmin.local -q 'add_principal -x linkdn=cn=user123,OU=User,OU=Kafka,OU=Service,DC=example,DC=org user123'
+    $ kadmin.local -q 'add_principal -x linkdn=cn=user123,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org user123'
     
     Authenticating as principal root/admin@EXAMPLE.ORG with password.
     WARNING: no policy specified for user123@EXAMPLE.ORG; defaulting to no policy
@@ -71,76 +80,162 @@ Add new Kerberos principal and link it to user123:
     Re-enter password for principal "user123@EXAMPLE.ORG":
     Principal "user123@EXAMPLE.ORG" created.
 
+    $ ldapsearch -x -H ldaps://ldap.example.org:636 -b OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org -D "cn=admin,dc=example,dc=org" -w admin
+
 **Now Kerberos should be able to query Openldap**
 
     $ ldapsearch -x -H ldaps://ldap.example.org:636 -b dc=example,dc=org -D "cn=admin,dc=example,dc=org" -w admin
 
-Output:
+Part of Output:
 
-    dn: krbPrincipalName=kadmin/history@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbContainer,dc=example,dc=org
+    # extended LDIF
+    #
+    # LDAPv3
+    # base <dc=example,dc=org> with scope subtree
+    # filter: (objectclass=*)
+    # requesting: ALL
+    #
+    
+    # example.org
+    dn: dc=example,dc=org
+    objectClass: top
+    objectClass: dcObject
+    objectClass: organization
+    o: Example Inc.
+    dc: example
+    
+    # krbContainer, example.org
+    dn: cn=krbContainer,dc=example,dc=org
+    objectClass: krbContainer
+    cn: krbContainer
+    
+    # EXAMPLE.ORG, krbContainer, example.org
+    dn: cn=EXAMPLE.ORG,cn=krbContainer,dc=example,dc=org
+    cn: EXAMPLE.ORG
+    objectClass: top
+    objectClass: krbRealmContainer
+    objectClass: krbTicketPolicyAux
+    krbSubTrees: dc=example,dc=org
+    
+    # K/M@EXAMPLE.ORG, EXAMPLE.ORG, krbContainer, example.org
+    dn: krbPrincipalName=K/M@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbContainer,dc=example
+    ,dc=org
+    krbLoginFailedCount: 0
+    krbMaxTicketLife: 36000
+    krbMaxRenewableAge: 604800
+    krbTicketFlags: 192
+    krbPrincipalName: K/M@EXAMPLE.ORG
+    krbPrincipalExpiration: 19700101000000Z
+    krbPrincipalKey:: MGagAwIBAaEDAgEBogMCAQGjAwIBAKRQME4wTKAHMAWgAwIBAKFBMD+gAwIB
+    EKE4BDYYAFUvyGuZYpdrvavNBw5uhZ6p96GndnOxiN1KizxU4SsBro8aNLk4nyF+tv3iP2qiJigyE
+    mE=
+    krbLastPwdChange: 19700101000000Z
+    krbExtraData:: AAkBAAEAbRHmYA==
+    krbExtraData:: AAJtEeZgZGJfY3JlYXRpb25ARVhBTVBMRS5PUkcA
+    krbExtraData:: AAcBAAIAAlYAAAAAAAA=
+    objectClass: krbPrincipal
+    objectClass: krbPrincipalAux
+    objectClass: krbTicketPolicyAux
+    
+    # krbtgt/EXAMPLE.ORG@EXAMPLE.ORG, EXAMPLE.ORG, krbContainer, example.org
+    dn: krbPrincipalName=krbtgt/EXAMPLE.ORG@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbConta
+    iner,dc=example,dc=org
     krbLoginFailedCount: 0
     krbMaxTicketLife: 36000
     krbMaxRenewableAge: 604800
     krbTicketFlags: 0
-    krbPrincipalName: kadmin/history@EXAMPLE.ORG
+    krbPrincipalName: krbtgt/EXAMPLE.ORG@EXAMPLE.ORG
     krbPrincipalExpiration: 19700101000000Z
-    krbPrincipalKey:: MGagAwIBAaEDAgEBogMCAQGjAwIBAKRQME4wTKAHMAWgAwIBAKFBMD+gAwIB
-    EKE4BDYYAH16cf9AqSnc0VtJ+28lR1tuXKO8aNQeHze/orLCWx1XgKoB7NXgClb1flEJS7HeFAf2v
-    RE=
+    krbPrincipalKey:: MIG2oAMCAQGhAwIBAaIDAgEBowMCAQCkgZ8wgZwwVKAHMAWgAwIBAKFJMEeg
+    AwIBEqFABD4gAMLptKDcjwMS0HA2VjE8qZVvFjhe4gSgtuPGyEHGnZNr1WgErqbgAV6gshekHcbA6
+    fGtvNsF0uwL1Gv1cTBEoAcwBaADAgEAoTkwN6ADAgERoTAELhAAndj7G8rd6cvfhknpqS75bDKPjP
+    H4BuELzH0aqmECADTy72fg/Jg3xCrPvhQ=
     krbLastPwdChange: 19700101000000Z
-    krbExtraData:: AALlfuRgZGJfY3JlYXRpb25ARVhBTVBMRS5PUkcA
-    krbExtraData:: AAcBAAIAAlUAAAAAAAA=
+    krbExtraData:: AAJtEeZgZGJfY3JlYXRpb25ARVhBTVBMRS5PUkcA
+    krbExtraData:: AAcBAAIAAlYAAAAAAAA=
     objectClass: krbPrincipal
     objectClass: krbPrincipalAux
     objectClass: krbTicketPolicyAux
     
-    # Service, example.org
-    dn: ou=Service,dc=example,dc=org
-    objectClass: organizationalUnit
-    ou: Service
+    # kadmin/admin@EXAMPLE.ORG, EXAMPLE.ORG, krbContainer, example.org
+    dn: krbPrincipalName=kadmin/admin@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbContainer,d
+    c=example,dc=org
+    krbLoginFailedCount: 0
+    krbMaxTicketLife: 10800
+    krbMaxRenewableAge: 604800
+    krbTicketFlags: 4
+    krbPrincipalName: kadmin/admin@EXAMPLE.ORG
+    krbPrincipalExpiration: 19700101000000Z
+    krbPrincipalKey:: MIG2oAMCAQGhAwIBAaIDAgEBowMCAQCkgZ8wgZwwVKAHMAWgAwIBAKFJMEeg
+    AwIBEqFABD4gAJKSRyuLgCkn3gIqjktHNCPj45M8N2Pd0a5f1kuaUaXzAMIF8ngSKRtYIYUsMBsMI
+    qN7vBUkUll9nnBJWzBEoAcwBaADAgEAoTkwN6ADAgERoTAELhAAP8NMs6/ozxmjghquYnZDvyWTmL
+    uYtQwcS0siA2WNCL4GN4+TGSbeLn4Och0=
+    krbLastPwdChange: 19700101000000Z
+    krbExtraData:: AAJtEeZgZGJfY3JlYXRpb25ARVhBTVBMRS5PUkcA
+    krbExtraData:: AAcBAAIAAlYAAAAAAAA=
+    objectClass: krbPrincipal
+    objectClass: krbPrincipalAux
+    objectClass: krbTicketPolicyAux
     
-    # Kafka, Service, example.org
-    dn: ou=Kafka,ou=Service,dc=example,dc=org
-    objectClass: organizationalUnit
-    ou: Kafka
+    # kadmin/fb236757fe13@EXAMPLE.ORG, EXAMPLE.ORG, krbContainer, example.org
+    dn: krbPrincipalName=kadmin/fb236757fe13@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbCont
+    ainer,dc=example,dc=org
+    krbLoginFailedCount: 0
+    krbMaxTicketLife: 10800
+    krbMaxRenewableAge: 604800
+    krbTicketFlags: 4
+    krbPrincipalName: kadmin/fb236757fe13@EXAMPLE.ORG
+    krbPrincipalExpiration: 19700101000000Z
+    krbPrincipalKey:: MIG2oAMCAQGhAwIBAaIDAgEBowMCAQCkgZ8wgZwwVKAHMAWgAwIBAKFJMEeg
+    AwIBEqFABD4gAOMZ8oySwdAOTLy8yXgHwL/8yISRVfhNSPbI18G3CNieQCQdoLQ/nTMlPl7zIVNrK
+    N6KQ+9032nbR1ikJDBEoAcwBaADAgEAoTkwN6ADAgERoTAELhAAJ56slEhOUOnX6nSSj9N0T1otUZ
+    cDq9JuZ9brCtajUmsxsJRdLAE6iujkeMQ=
+    krbLastPwdChange: 19700101000000Z
+    krbExtraData:: AAJtEeZgZGJfY3JlYXRpb25ARVhBTVBMRS5PUkcA
+    krbExtraData:: AAcBAAIAAlYAAAAAAAA=
+    objectClass: krbPrincipal
+    objectClass: krbPrincipalAux
+    objectClass: krbTicketPolicyAux
     
-    # User, Kafka, Service, example.org
-    dn: ou=User,ou=Kafka,ou=Service,dc=example,dc=org
-    objectClass: organizationalUnit
-    ou: User
+    # kiprop/fb236757fe13@EXAMPLE.ORG, EXAMPLE.ORG, krbContainer, example.org
+    dn: krbPrincipalName=kiprop/fb236757fe13@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbCont
+    ainer,dc=example,dc=org
+    krbLoginFailedCount: 0
+    krbMaxTicketLife: 36000
+    krbMaxRenewableAge: 604800
+    krbTicketFlags: 0
+    krbPrincipalName: kiprop/fb236757fe13@EXAMPLE.ORG
+    krbPrincipalExpiration: 19700101000000Z
+    krbPrincipalKey:: MIG2oAMCAQGhAwIBAaIDAgEBowMCAQCkgZ8wgZwwVKAHMAWgAwIBAKFJMEeg
+    AwIBEqFABD4gAPznGs0EttdY6eDs9vueOXe1cxOWHNIAd5l7hRYAwDh2GVwjdM1HG2g1yi9nuT4F8
+    dbkpx+i+B1o0eilBzBEoAcwBaADAgEAoTkwN6ADAgERoTAELhAAtRXvmubvhQGttv/rCS2smPb6Gc
+    /IavYhrWYvihPmzWzopKX6zYzZZuGw+mY=
+    krbLastPwdChange: 19700101000000Z
+    krbExtraData:: AAJtEeZgZGJfY3JlYXRpb25ARVhBTVBMRS5PUkcA
+    krbExtraData:: AAcBAAIAAlYAAAAAAAA=
+    objectClass: krbPrincipal
+    objectClass: krbPrincipalAux
+    objectClass: krbTicketPolicyAux
     
-    # user123, User, Kafka, Service, example.org
-    dn: cn=user123,ou=User,ou=Kafka,ou=Service,dc=example,dc=org
-    cn: user123
+    ...
+    
+    # user1234, ServiceAccount, Kafka, Prod, Infrastructure, example.org
+    dn: cn=user1234,ou=ServiceAccount,ou=Kafka,ou=Prod,ou=Infrastructure,dc=exampl
+    e,dc=org
+    cn: user1234
     objectClass: person
     objectClass: uidObject
     objectClass: inetOrgPerson
-    mail: user123@EXAMPLE.ORG
-    uid: user123
+    mail: user1234@EXAMPLE.ORG
+    uid: user1234
     title: Mr.
     givenName: Bai
     sn: Xia
-    
-    # user123@EXAMPLE.ORG, EXAMPLE.ORG, krbContainer, example.org
-    dn: krbPrincipalName=user123@EXAMPLE.ORG,cn=EXAMPLE.ORG,cn=krbContainer,dc=exa
-    mple,dc=org
-    krbLoginFailedCount: 0
-    krbPrincipalName: user123@EXAMPLE.ORG
-    krbPrincipalKey:: MIG2oAMCAQGhAwIBAaIDAgEBowMCAQGkgZ8wgZwwVKAHMAWgAwIBAKFJMEeg
-    AwIBEqFABD4gAGDizHqUNkB9cw9A372y1dsJbcXtO7Z0V80KPFp8rM9XisIj+xRqbP7E+W78hy9wg
-    i3+Q7lFKYQ6Q5ZR0zBEoAcwBaADAgEAoTkwN6ADAgERoTAELhAAZM+kEB/0S5M53vVQZ8uhVkTYMK
-    VcpCihNl3I0j7RlzLUfX9nAJzc48pG7AM=
-    krbLastPwdChange: 20210706160519Z
-    krbExtraData:: AAI/f+Rgcm9vdC9hZG1pbkBFWEFNUExFLk9SRwA=
-    krbExtraData:: AAgBAA==
-    krbObjectReferences: cn=user123,ou=User,ou=Kafka,ou=Service,dc=example,dc=org
-    objectClass: krbPrincipal
-    objectClass: krbPrincipalAux
-    objectClass: krbTicketPolicyAux
+    userPassword:: bXlwYXNzd29yZA==
     
     # search result
     search: 2
     result: 0 Success
     
-    # numResponses: 16
-    # numEntries: 15
+    # numResponses: 23
+    # numEntries: 22
