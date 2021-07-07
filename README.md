@@ -53,23 +53,34 @@ Create test user:
 
     # grab the script from test/add_user.ldif. 
     # For editing you can install vim by yourself, since container will start as root user
-    $ ldapadd -x -H ldaps://ldap.example.org:636 -D "cn=admin,dc=example,dc=org" -W -f add_user.ldif
+    $ ldapadd -x -H ldaps://ldap.example.org:636 -D "cn=admin,dc=example,dc=org" -W -f init_ldap.ldif
     
     Enter LDAP Password: admin
-    adding new entry "OU=Service,DC=example,DC=org"
-    adding new entry "OU=Kafka,OU=Service,DC=example,DC=org"
-    adding new entry "OU=User,OU=Kafka,OU=Service,DC=example,DC=org"
-    adding new entry "CN=user123,OU=User,OU=Kafka,OU=Service,DC=example,DC=org"    
+    adding new entry "OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=Test,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "CN=Reader,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "CN=Writer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "CN=Viewer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    adding new entry "uid=kafka-stream-001,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    modifying entry "CN=Writer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    modifying entry "CN=Reader,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"
+    modifying entry "CN=Viewer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org"   
 
 Add new Kerberos principal and link it to user123:
 
-    $ kadmin.local -q 'add_principal -x linkdn=cn=user123,OU=User,OU=Kafka,OU=Service,DC=example,DC=org user123'
+    $ kadmin.local -q 'add_principal -x linkdn=cn=user123,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org'
     
     Authenticating as principal root/admin@EXAMPLE.ORG with password.
     WARNING: no policy specified for user123@EXAMPLE.ORG; defaulting to no policy
     Enter password for principal "user123@EXAMPLE.ORG":
     Re-enter password for principal "user123@EXAMPLE.ORG":
     Principal "user123@EXAMPLE.ORG" created.
+
+    $ ldapsearch -x -H ldaps://ldap.example.org:636 -b OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org -D "cn=admin,dc=example,dc=org" -w admin
 
 **Now Kerberos should be able to query Openldap**
 
