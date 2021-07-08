@@ -49,6 +49,16 @@ givenName: Bai
 sn: Xia
 userPassword: mypassword
 
+dn: CN=kafka,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org
+cn: kafka/kafka-broker1
+objectClass: person
+objectClass: uidObject
+objectClass: inetOrgPerson
+mail: kafka@EXAMPLE.ORG
+uid: kafka
+sn: Kafka Service
+userPassword: mypassword
+
 dn: CN=Writer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org
 changetype: modify
 add: member
