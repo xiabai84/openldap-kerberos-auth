@@ -16,6 +16,32 @@ sleep 10
 : ${LDAP_CERTS:=/etc/openldap/certs/ca.crt}
 : ${LDAP_URL:=ldaps://$SEARCH_DOMAINS}
 
+create_kafka_user() {
+  # TBD
+  echo "########### Hardcoded create test user ##############"
+  ldapadd -x -H ldaps://ldap.example.org:636 -D "cn=admin,dc=example,dc=org" -W -f /home/init_ldap.ldif<<EOF
+$LDAP_PASS
+EOF
+  sleep 1
+  echo "########### Hardcoded create kafka service principal ##############"
+#  kadmin.local -q "add_principal -pw mypassword kafka/kafka@EXAMPLE.ORG"
+#  sleep 1
+  kadmin.local -q 'add_principal -x linkdn=cn=kafka,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org kafka/kafka'<<EOF
+mypassword
+mypassword
+EOF
+  sleep 1
+#  kadmin.local -q "add_principal -pw mypassword zookeeper/kafka@EXAMPLE.ORG"
+#  sleep 1
+  echo "########### Export Kerberos Ticket"
+  kadmin.local -q "ktadd -k /tmp/kafka.service.keytab kafka/kafka@EXAMPLE.ORG"
+  sleep 1
+  kadmin.local -q "ktadd -k /tmp/zookeeper.service.keytab zookeeper/kafka@EXAMPLE.ORG"
+  sleep 1
+  echo "###### Check Ticket on server side"
+  ls -l /tmp/
+}
+
 fix_nameserver() {
   cat>/etc/resolv.conf<<EOF
 nameserver $NAMESERVER_IP
@@ -75,11 +101,11 @@ EOF
         max_life = 10h 0m 0s
         max_renewable_life = 7d 0h 0m 0s
         master_key_type = des3-hmac-sha1
-        #supported_enctypes = aes256-cts:normal aes128-cts:normal
-        default_principal_flags = +preauth
+        supported_enctypes = aes256-cts:normal aes128-cts:normal
     }
 EOF
 }
+# kdc.conf realms -> default_principal_flags = +preauth
 
 create_db() {
   kdb5_util -P $KERB_MASTER_KEY -r $REALM create -s
@@ -110,11 +136,12 @@ restart_kdc() {
 }
 
 create_admin_user() {
+  echo "##### createing admin user"
   kadmin.local -q "addprinc -x dn=cn=$KERB_ADMIN_USER,$LDAP_DC admin" <<EOF
 $LDAP_PASS
 $LDAP_PASS
 EOF
-  echo "admin@$REALM *" > /etc/krb5kdc/kadm5.acl
+  echo "*/admin@$REALM *" > /etc/krb5kdc/kadm5.acl
 }
 
 if [ ! -f /kerberos_initialized ]; then
@@ -125,10 +152,14 @@ if [ ! -f /kerberos_initialized ]; then
   create_admin_user
   create_db
   start_kdc
+  sleep 10
+  create_kafka_user
 
   touch /kerberos_initialized
 else
   start_kdc
+  sleep 10
+  create_kafka_user
 fi
 
 tail -F /var/log/kerberos/krb5kdc.log

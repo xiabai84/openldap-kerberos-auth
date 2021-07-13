@@ -64,6 +64,57 @@ services:
       - "88:88"
       - "464:464"
       - "749:749"
+    volumes:
+      - "shared-tmpfs:/tmp"
     depends_on:
       - openldap
       - phpldapadmin
+
+  zookeeper:
+    image: "docker.io/bitnami/zookeeper:3"
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    hostname: "kafka"
+    image: "local/kafka:2-debian-10"
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    volumes:
+      - "kafka_data:/bitnami"
+      - "shared-tmpfs:/tmp"
+    environment:
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=SASL_SSL
+#      - KAFKA_ZOOKEEPER_PROTOCOL=PLAINTEXT
+#      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+#      - KAFKA_CFG_TLS_CLIENT_AUTH=none
+#      - KAFKA_ZOOKEEPER_TLS_VERIFY_HOSTNAME=false
+#      - ALLOW_PLAINTEXT_LISTENER=yes
+#      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+#      - KAFKA_CERTIFICATE_PASSWORD="mypassword"
+#      - KAFKA_ZOOKEEPER_TLS_KEYSTORE_PASSWORD="mypassword"
+#      - KAFKA_ZOOKEEPER_TLS_TRUSTSTORE_PASSWORD="mypassword"
+#      - KAFKA_CFG_SASL_ENABLED_MECHANISMS=GSSAPI
+#      - KAFKA_CFG_SASL_MECHANISM_INTER_BROKER_PROTOCOL=GSSAPI
+#      - KAFKA_CFG_LISTENERS=CLIENT://:9093,EXTERNAL://:9092
+#      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9093,EXTERNAL://localhost:9092
+    depends_on:
+      - openldap
+      - kerberos
+      - zookeeper
+
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
+  shared-tmpfs:
+    driver: local
+    driver_opts:
+      type: "tmpfs"
+      device: "tmpfs"
+      o: "size=2m,uid=1000"

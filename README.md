@@ -62,7 +62,9 @@ Create test user:
 Add new Kerberos principal and link it to user123:
 
     $ kadmin.local -q 'add_principal -x linkdn=cn=user123,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org user123'
-    $ kadmin.local -q 'add_principal -x linkdn=cn=kafka,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org kafka/kafka-broker1'
+
+    # kafka/kafka -> service_name/hostname(broker)
+    $ kadmin.local -q 'add_principal -x linkdn=cn=kafka,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org kafka/kafka'
 
 
 **Now users are queryable over ldap:**
@@ -111,3 +113,31 @@ Login:
 Password:
 
     admin
+
+
+## config krb5.conf file on client
+first steup principal kafka/kafka@EXAMPLE.ORG on server-side, then perfom:
+
+    $ kinit kafka/kafka@EXAMPLE.ORG
+    $ klist
+
+## Creating Keytab for Kafka Server
+    
+    # set this ticket permission to 600
+    $ kadmin.local -q "xst -kt /tmp/kafka.service.keytab kafka/kafka@EXAMPLE.ORG"
+
+# copy keytab from kdc to kafka
+
+    $ docker cp kerberos:/tmp/kafka.service.keytab .
+
+
+# Extra Configuration
+
+## Certificate:
+jks keystore, truststore mount under /bitnami/kafka/config/certs directory
+
+## Start Kafka Service
+Before Kafka service being initialized, the KDC and LDAP services must be up and ready for use.
+
+Bitnami Kafka has no support for Kerberos configuration and has some special configuration round TLS authentication.
+Therefore, we must manipulate its init scripts like libkafka.sh and run.sh to solve this problem.
