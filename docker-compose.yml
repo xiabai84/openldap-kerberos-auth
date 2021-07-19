@@ -72,6 +72,7 @@ services:
 
   zookeeper:
     image: "docker.io/bitnami/zookeeper:3"
+    hostname: "zookeeper"
     ports:
       - "2181:2181"
     volumes:
@@ -79,8 +80,8 @@ services:
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
   kafka:
-    hostname: "kafka"
     image: "local/kafka:2-debian-10"
+    hostname: "kafka"
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -89,10 +90,10 @@ services:
       - "shared-tmpfs:/tmp"
     environment:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=SASL_SSL
+      - KAFKA_ZOOKEEPER_TLS_VERIFY_HOSTNAME=false
 #      - KAFKA_ZOOKEEPER_PROTOCOL=PLAINTEXT
 #      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
 #      - KAFKA_CFG_TLS_CLIENT_AUTH=none
-#      - KAFKA_ZOOKEEPER_TLS_VERIFY_HOSTNAME=false
 #      - ALLOW_PLAINTEXT_LISTENER=yes
 #      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
 #      - KAFKA_CERTIFICATE_PASSWORD="mypassword"

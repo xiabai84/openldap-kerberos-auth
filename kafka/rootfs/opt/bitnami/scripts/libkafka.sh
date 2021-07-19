@@ -540,29 +540,30 @@ kafka_create_alias_environment_variables() {
 ## Returns:
 ##   String
 ##########################
-zookeeper_get_tls_config() {
-    # Note that ZooKeeper does not support a key password different from the keystore password,
-    # so be sure to set the key password in the keystore to be identical to the keystore password;
-    # otherwise the connection attempt to Zookeeper will fail.
-    local -r ext="${KAFKA_ZOOKEEPER_TLS_TYPE,,}"
-    local keystore_location=""
+#zookeeper_get_tls_config() {
+#    # Note that ZooKeeper does not support a key password different from the keystore password,
+#    # so be sure to set the key password in the keystore to be identical to the keystore password;
+#    # otherwise the connection attempt to Zookeeper will fail.
+#    local -r ext="${KAFKA_ZOOKEEPER_TLS_TYPE,,}"
+#    local keystore_location=""
+#
+#    if [[ "$KAFKA_ZOOKEEPER_TLS_TYPE" = "JKS" ]] && [[ -f "$KAFKA_CERTS_DIR"/zookeeper.keystore.jks ]]; then
+#        keystore_location="${KAFKA_CERTS_DIR}/zookeeper.keystore.jks"
+#    elif [[ "$KAFKA_ZOOKEEPER_TLS_TYPE" = "PEM" ]] && [[ -f "$KAFKA_CERTS_DIR"/zookeeper.keystore.pem ]] && [[ -f "$KAFKA_CERTS_DIR"/zookeeper.keystore.key ]]; then
+#        # Concatenating private key into public certificate file
+#        # This is needed to load keystore from location using PEM
+#        cat "$KAFKA_CERTS_DIR"/zookeeper.keystore.key >> "$KAFKA_CERTS_DIR"/zookeeper.keystore.pem
+#        keystore_location="${KAFKA_CERTS_DIR}/zookeeper.keystore.pem"
+#    fi
+#    echo "-Dzookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty \
+#          -Dzookeeper.client.secure=true \
+#          -Dzookeeper.ssl.keyStore.location=${keystore_location} \
+#          -Dzookeeper.ssl.keyStore.password=${KAFKA_ZOOKEEPER_TLS_KEYSTORE_PASSWORD} \
+#          -Dzookeeper.ssl.trustStore.location=${KAFKA_CERTS_DIR}/zookeeper.truststore.${ext} \
+#          -Dzookeeper.ssl.trustStore.password=${KAFKA_ZOOKEEPER_TLS_TRUSTSTORE_PASSWORD} \
+#          -Dzookeeper.ssl.hostnameVerification=${KAFKA_ZOOKEEPER_TLS_VERIFY_HOSTNAME}"
+#}
 
-    if [[ "$KAFKA_ZOOKEEPER_TLS_TYPE" = "JKS" ]] && [[ -f "$KAFKA_CERTS_DIR"/zookeeper.keystore.jks ]]; then
-        keystore_location="${KAFKA_CERTS_DIR}/zookeeper.keystore.jks"
-    elif [[ "$KAFKA_ZOOKEEPER_TLS_TYPE" = "PEM" ]] && [[ -f "$KAFKA_CERTS_DIR"/zookeeper.keystore.pem ]] && [[ -f "$KAFKA_CERTS_DIR"/zookeeper.keystore.key ]]; then
-        # Concatenating private key into public certificate file
-        # This is needed to load keystore from location using PEM
-        cat "$KAFKA_CERTS_DIR"/zookeeper.keystore.key >> "$KAFKA_CERTS_DIR"/zookeeper.keystore.pem
-        keystore_location="${KAFKA_CERTS_DIR}/zookeeper.keystore.pem"
-    fi
-    echo "-Dzookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty \
-          -Dzookeeper.client.secure=true \
-          -Dzookeeper.ssl.keyStore.location=${keystore_location} \
-          -Dzookeeper.ssl.keyStore.password=${KAFKA_ZOOKEEPER_TLS_KEYSTORE_PASSWORD} \
-          -Dzookeeper.ssl.trustStore.location=${KAFKA_CERTS_DIR}/zookeeper.truststore.${ext} \
-          -Dzookeeper.ssl.trustStore.password=${KAFKA_ZOOKEEPER_TLS_TRUSTSTORE_PASSWORD} \
-          -Dzookeeper.ssl.hostnameVerification=${KAFKA_ZOOKEEPER_TLS_VERIFY_HOSTNAME}"
-}
 #
 #########################
 ## Configure Kafka configuration files from environment variables

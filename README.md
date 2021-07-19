@@ -141,3 +141,48 @@ Before Kafka service being initialized, the KDC and LDAP services must be up and
 
 Bitnami Kafka has no support for Kerberos configuration and has some special configuration round TLS authentication.
 Therefore, we must manipulate its init scripts like libkafka.sh and run.sh to solve this problem.
+
+## Generate Certificates
+    
+    # create keystore
+    $ keytool -genkey -keyalg RSA -keystore kafka.server.keystore.jks -validity 365 -storepass $SRVPASS -keypass $SRVPASS -dname "CN=kafka" -storetype pkcs12
+    
+    # signing request
+    $ keytool -keystore kafka.server.keystore.jks -certreq -file cert-file -storepass $SRVPASS -keypass $SRVPASS
+
+    # Sign new certificate for Kafka server (assume we have a CA already, use ca.key and ca.crt from ldap server)
+    $ openssl x509 -req -CA ca.crt -CAkey ca.key -in cert-file -out cert-signed -days 365 -CAcreateserial -passin pass:$SRVPASS
+
+    # create truststore
+    $ keytool -keystore kafka.server.truststore.jks -alias CARoot -import -file ca.crt -storepass $SRVPASS -keypass $SRVPASS -noprompt
+    
+    # import certs
+    $ keytool -keystore kafka.server.keystore.jks -alias CARoot -import -file ca.crt -storepass $SRVPASS -keypass $SRVPASS -noprompt
+    $ keytool -keystore kafka.server.keystore.jks -alias KafkaRoot -import -file cert-signed -storepass $SRVPASS -keypass $SRVPASS -noprompt
+
+
+## Current Exception
+
+org.apache.kafka.common.KafkaException: org.apache.kafka.common.config.ConfigException: Invalid value javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target for configuration A client SSLEngine created with the provided settings can't connect to a server SSLEngine created with those settings.
+kafka_1         | 	at org.apache.kafka.common.network.SaslChannelBuilder.configure(SaslChannelBuilder.java:184)
+kafka_1         | 	at org.apache.kafka.common.network.ChannelBuilders.create(ChannelBuilders.java:192)
+kafka_1         | 	at org.apache.kafka.common.network.ChannelBuilders.serverChannelBuilder(ChannelBuilders.java:107)
+kafka_1         | 	at kafka.network.Processor.<init>(SocketServer.scala:853)
+kafka_1         | 	at kafka.network.SocketServer.newProcessor(SocketServer.scala:442)
+kafka_1         | 	at kafka.network.SocketServer.$anonfun$addDataPlaneProcessors$1(SocketServer.scala:299)
+kafka_1         | 	at scala.collection.immutable.Range.foreach$mVc$sp(Range.scala:158)
+kafka_1         | 	at kafka.network.SocketServer.addDataPlaneProcessors(SocketServer.scala:297)
+kafka_1         | 	at kafka.network.SocketServer.$anonfun$createDataPlaneAcceptorsAndProcessors$1(SocketServer.scala:262)
+kafka_1         | 	at kafka.network.SocketServer.$anonfun$createDataPlaneAcceptorsAndProcessors$1$adapted(SocketServer.scala:259)
+kafka_1         | 	at scala.collection.mutable.ResizableArray.foreach(ResizableArray.scala:62)
+kafka_1         | 	at scala.collection.mutable.ResizableArray.foreach$(ResizableArray.scala:55)
+kafka_1         | 	at scala.collection.mutable.ArrayBuffer.foreach(ArrayBuffer.scala:49)
+kafka_1         | 	at kafka.network.SocketServer.createDataPlaneAcceptorsAndProcessors(SocketServer.scala:259)
+kafka_1         | 	at kafka.network.SocketServer.startup(SocketServer.scala:131)
+kafka_1         | 	at kafka.server.KafkaServer.startup(KafkaServer.scala:285)
+kafka_1         | 	at kafka.Kafka$.main(Kafka.scala:109)
+kafka_1         | 	at kafka.Kafka.main(Kafka.scala)
+kafka_1         | Caused by: org.apache.kafka.common.config.ConfigException: Invalid value javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target for configuration A client SSLEngine created with the provided settings can't connect to a server SSLEngine created with those settings.
+kafka_1         | 	at org.apache.kafka.common.security.ssl.SslFactory.configure(SslFactory.java:100)
+kafka_1         | 	at org.apache.kafka.common.network.SaslChannelBuilder.configure(SaslChannelBuilder.java:180)
+kafka_1         | 	... 17 more

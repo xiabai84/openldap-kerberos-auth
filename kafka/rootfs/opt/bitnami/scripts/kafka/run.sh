@@ -27,16 +27,6 @@ flags=("$KAFKA_CONF_FILE")
 [[ -z "${KAFKA_EXTRA_FLAGS:-}" ]] || flags=("${flags[@]}" "${KAFKA_EXTRA_FLAGS[@]}")
 START_COMMAND=("$KAFKA_HOME/bin/kafka-server-start.sh" "${flags[@]}" "$@")
 
-
-echo "############################################################"
-echo "# Whoami: `whoami`"
-echo "# Hostname: `hostname`"
-echo "# FQDN: `hostname --fqdn`"
-echo "# hosts: `cat /etc/hosts`"
-echo "# KAFKA_OPTS: $KAFKA_OPTS"
-echo "# Kafka_Start_Command: ${START_COMMAND[@]}"
-echo "############################################################"
-
 info "** Starting Kafka **"
 if am_i_root; then
     exec gosu "$KAFKA_DAEMON_USER" "${START_COMMAND[@]}"

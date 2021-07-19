@@ -37,7 +37,7 @@ ADD ./config/server.properties /opt/bitnami/kafka/config/server.properties
 ADD ./config/krb5.conf /etc/krb5.conf
 ADD ./user /home
 
-RUN chmod 777 /bitnami/kafka/conf/certs/kafka.keystore.jks && chmod 777 /bitnami/kafka/conf/certs/kafka.truststore.jks
+RUN chmod 777 /bitnami/kafka/conf/certs/*
 
 EXPOSE 9092 9093
 

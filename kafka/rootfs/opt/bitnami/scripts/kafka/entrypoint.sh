@@ -25,12 +25,12 @@ KAFKA_KEYTAB=/tmp/kafka.service.keytab
 
 echo "#### Check Kerberos Ticket from Kafka server side: ls -l /tmp:"
 ls -l /tmp
-chmod 777 $KAFKA_KEYTAB
-#chmod 777 $ZOOKEEPER_KEYTAB
+chmod a+r $KAFKA_KEYTAB
+#chmod a+r $ZOOKEEPER_KEYTAB
 
-echo "##### kinit $KAFKA_SRV_ACCOUNT:"
+echo "##### kinit grab a ticket for principal $KAFKA_SRV_ACCOUNT:"
 kinit -k -t $KAFKA_KEYTAB $KAFKA_SRV_ACCOUNT
-
+klist
 
 echo "List credentials contains in $KAFKA_KEYTAB"
 klist -k -t -e $KAFKA_KEYTAB
