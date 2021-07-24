@@ -16,7 +16,8 @@ set -o pipefail
 . /opt/bitnami/scripts/zookeeper-env.sh
 
 # Ensure ZooKeeper environment variables are valid
-zookeeper_validate
+#zookeeper_validate
+
 # Ensure ZooKeeper user and group exist when running as 'root'
 if am_i_root; then
     ensure_user_exists "$ZOO_DAEMON_USER" --group "$ZOO_DAEMON_GROUP"

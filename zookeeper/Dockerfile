@@ -17,13 +17,22 @@ RUN chmod g+rwX /opt/bitnami
 RUN ln -s /opt/bitnami/scripts/zookeeper/entrypoint.sh /entrypoint.sh
 RUN ln -s /opt/bitnami/scripts/zookeeper/run.sh /run.sh
 
+RUN export DEBIAN_FRONTEND=noninteractive && apt update && apt install -y krb5-user ldap-utils
+
 COPY rootfs /
+ADD ./config/krb5.conf /etc/krb5.conf
+
+ADD ./credentials /bitnami/zookeeper/conf/certs
+
 RUN /opt/bitnami/scripts/zookeeper/postunpack.sh
 ENV BITNAMI_APP_NAME="zookeeper" \
     BITNAMI_IMAGE_VERSION="3.7.0-debian-10-r87"
 
+ADD ./config/zoo.cfg /opt/bitnami/zookeeper/conf/zoo.cfg
+ADD ./config/zookeeper_jaas.conf /opt/bitnami/zookeeper/conf/zookeeper_jaas.conf
+
 EXPOSE 2181 2888 3888 8080
 
-USER 1001
+#USER 1001
 ENTRYPOINT [ "/opt/bitnami/scripts/zookeeper/entrypoint.sh" ]
 CMD [ "/opt/bitnami/scripts/zookeeper/run.sh" ]

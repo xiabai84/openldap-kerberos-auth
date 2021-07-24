@@ -1,5 +1,6 @@
 #!/bin/bash
 
+sleep 30
 # shellcheck disable=SC1091
 
 set -o errexit
@@ -16,6 +17,13 @@ set -o pipefail
 . /opt/bitnami/scripts/zookeeper-env.sh
 
 print_welcome_page
+
+ZOO_SRV_ACCOUNT=zookeeper/zookeeper.zk-kafka_cluster.local
+ZOO_KEYTAB=/tmp/zookeeper.service.keytab
+echo "##### kinit grab a ticket for principal $ZOO_SRV_ACCOUNT:"
+kinit -k -t $ZOO_KEYTAB $ZOO_SRV_ACCOUNT
+
+klist
 
 if [[ "$*" = *"/opt/bitnami/scripts/zookeeper/run.sh"* || "$*" = *"/run.sh"* ]]; then
     info "** Starting ZooKeeper setup **"
