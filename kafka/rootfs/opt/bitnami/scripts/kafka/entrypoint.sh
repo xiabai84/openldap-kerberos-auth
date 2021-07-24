@@ -17,7 +17,7 @@ set -o pipefail
 
 print_welcome_page
 
-sleep 30
+sleep 40
 KAFKA_SRV_ACCOUNT=kafka/kafka
 ZOO_SRV_ACCOUNT=zookeeper/zookeeper.zk-kafka_cluster.local
 KAFKA_KEYTAB=/tmp/kafka.service.keytab

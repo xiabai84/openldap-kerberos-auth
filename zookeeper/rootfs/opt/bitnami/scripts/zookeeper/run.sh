@@ -14,8 +14,9 @@ set -o pipefail
 
 # Load ZooKeeper environment variables
 . /opt/bitnami/scripts/zookeeper-env.sh
-export SERVER_JVMFLAGS="-Djava.security.auth.login.config=/opt/bitnami/zookeeper/conf/zookeeper_jaas.conf -Dsun.security.krb5.debug=true"
-export KAFKA_OPTS="-Dsun.security.krb5.debug=true -Djava.security.auth.login.config=/opt/bitnami/zookeeper/conf/zookeeper_jaas.conf"
+
+export SERVER_JVMFLAGS="-Djava.security.auth.login.config=/opt/bitnami/zookeeper/conf/zookeeper_jaas.conf -Dsun.security.krb5.debug=true -Djute.maxbuffer=500000000"
+export KAFKA_OPTS="-Dsun.security.krb5.debug=true -Djava.security.auth.login.config=/opt/bitnami/zookeeper/conf/zookeeper_jaas.conf -Djute.maxbuffer=500000000"
 #export KAFKA_OPTS="-Dsun.security.krb5.debug=true -Djava.security.krb5.conf=/etc/krb5.conf -Djava.security.auth.login.config=/opt/bitnami/zookeeper/conf/zookeeper_jaas.conf"
 
 START_COMMAND=("${ZOO_BASE_DIR}/bin/zkServer.sh ${ZOO_CONF_FILE}")
