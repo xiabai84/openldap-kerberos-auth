@@ -18,11 +18,6 @@ if [[ "${KAFKA_CFG_LISTENERS:-}" =~ SASL ]] || [[ "${KAFKA_CFG_LISTENER_SECURITY
     export KAFKA_OPTS="-Dsun.security.krb5.debug=true -Djava.security.krb5.conf=/etc/krb5.conf -Djava.security.auth.login.config=${KAFKA_CONF_DIR}/kafka_jaas.conf"
 fi
 
-if [[ "${KAFKA_ZOOKEEPER_PROTOCOL:-}" =~ SSL ]]; then
-    ZOOKEEPER_SSL_CONFIG=$(zookeeper_get_tls_config)
-    export KAFKA_OPTS="$KAFKA_OPTS $ZOOKEEPER_SSL_CONFIG"
-fi
-
 flags=("$KAFKA_CONF_FILE")
 [[ -z "${KAFKA_EXTRA_FLAGS:-}" ]] || flags=("${flags[@]}" "${KAFKA_EXTRA_FLAGS[@]}")
 START_COMMAND=("$KAFKA_HOME/bin/kafka-server-start.sh" "${flags[@]}" "$@")

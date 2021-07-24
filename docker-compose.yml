@@ -35,6 +35,9 @@ services:
     ports:
       - "389:389"
       - "636:636"
+    networks:
+      - cluster.local
+
   phpldapadmin:
     image: osixia/phpldapadmin:latest
     container_name: phpldapadmin
@@ -45,9 +48,13 @@ services:
       - "8080:80"
     depends_on:
       - openldap
+    networks:
+      - cluster.local
+
   kerberos:
     image: local/kerberos:1.0.0
-    container_name: kerberos
+    hostname: "kerberos"
+    container_name: "kerberos"
     environment:
       REALM: "EXAMPLE.ORG"
       DOMAIN_REALM: "example.org"
@@ -69,19 +76,32 @@ services:
     depends_on:
       - openldap
       - phpldapadmin
+    networks:
+      - cluster.local
 
   zookeeper:
-    image: "docker.io/bitnami/zookeeper:3"
+    image: "local/zookeeper:3.7"
     hostname: "zookeeper"
+    container_name: "zookeeper"
     ports:
       - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
     volumes:
       - "zookeeper_data:/bitnami"
+      - "shared-tmpfs:/tmp"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    depends_on:
+      - openldap
+      - kerberos
+    networks:
+      - cluster.local
+
   kafka:
     image: "local/kafka:2-debian-10"
     hostname: "kafka"
+    container_name: "kafka"
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -107,6 +127,8 @@ services:
       - openldap
       - kerberos
       - zookeeper
+    networks:
+      - cluster.local
 
 volumes:
   zookeeper_data:
@@ -119,3 +141,7 @@ volumes:
       type: "tmpfs"
       device: "tmpfs"
       o: "size=2m,uid=1000"
+
+networks:
+  cluster.local:
+    driver: bridge

@@ -24,21 +24,36 @@ $LDAP_PASS
 EOF
   sleep 1
   echo "########### Hardcoded create kafka service principal ##############"
-#  kadmin.local -q "add_principal -pw mypassword kafka/kafka@EXAMPLE.ORG"
-#  sleep 1
   kadmin.local -q 'add_principal -x linkdn=cn=kafka,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org kafka/kafka'<<EOF
 mypassword
 mypassword
 EOF
   sleep 1
-#  kadmin.local -q "add_principal -pw mypassword zookeeper/kafka@EXAMPLE.ORG"
-#  sleep 1
   echo "########### Export Kerberos Ticket"
   kadmin.local -q "ktadd -k /tmp/kafka.service.keytab kafka/kafka@EXAMPLE.ORG"
   sleep 1
-  kadmin.local -q "ktadd -k /tmp/zookeeper.service.keytab zookeeper/kafka@EXAMPLE.ORG"
+  echo "###### Check Kafka Ticket on server side"
+  ls -l /tmp/
+}
+
+create_zookeeper_user() {
+  # TBD
+  echo "########### Hardcoded create test user ##############"
+  ldapadd -x -H ldaps://ldap.example.org:636 -D "cn=admin,dc=example,dc=org" -W -f /home/init_ldap.ldif<<EOF
+$LDAP_PASS
+EOF
   sleep 1
-  echo "###### Check Ticket on server side"
+  echo "########### Hardcoded create zookeeper service principal ##############"
+  kadmin.local -q 'add_principal -x linkdn=cn=zookeeper,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org zookeeper/zookeeper.zk-kafka_cluster.local'<<EOF
+mypassword
+mypassword
+EOF
+
+  sleep 1
+  echo "########### Export Kerberos Ticket"
+  kadmin.local -q "ktadd -k /tmp/zookeeper.service.keytab zookeeper/zookeeper.zk-kafka_cluster.local@EXAMPLE.ORG"
+  sleep 1
+  echo "###### Check Zookeeper Ticket on server side"
   ls -l /tmp/
 }
 
@@ -154,12 +169,14 @@ if [ ! -f /kerberos_initialized ]; then
   start_kdc
   sleep 10
   create_kafka_user
+  create_zookeeper_user
 
   touch /kerberos_initialized
 else
   start_kdc
   sleep 10
   create_kafka_user
+  create_zookeeper_user
 fi
 
 tail -F /var/log/kerberos/krb5kdc.log

@@ -59,6 +59,16 @@ uid: kafka
 sn: Kafka Service
 userPassword: mypassword
 
+dn: CN=zookeeper,OU=ServiceAccount,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org
+cn: zookeeper/zookeeper.zk-kafka_cluster.local
+objectClass: person
+objectClass: uidObject
+objectClass: inetOrgPerson
+mail: zookeeper@EXAMPLE.ORG
+uid: zookeeper
+sn: Zookeeper Service
+userPassword: mypassword
+
 dn: CN=Writer,OU=TIER-PARTNER-TP,OU=Kafka,OU=Prod,OU=Infrastructure,DC=example,DC=org
 changetype: modify
 add: member
